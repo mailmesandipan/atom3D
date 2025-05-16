@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Atom Animator - Updated Colors</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0; 
+            color: #333333;
+            overflow: hidden; 
+        }
+        .top-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            padding: 8px 0;
+            background-color: #e9e9e9;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 10; 
+        }
+        .controls-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            padding: 8px 12px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 8px;
+        }
+        .controls-bar label {
+            color: #333;
+            font-size: 0.9em;
+        }
+        .controls-bar input[type="text"] {
+            padding: 7px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            color: #333;
+            border-radius: 4px;
+            width: 130px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        .controls-bar button {
+            padding: 7px 14px;
+            background-color: #ff6600;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 0.9em;
+        }
+        .controls-bar button:hover {
+            background-color: #e65c00;
+        }
+        
+        #elementInfoDisplay {
+            background-color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            text-align: left;
+            font-size: 0.85em;
+            width: 90%;
+            max-width: 350px; 
+            margin-bottom: 8px;
+            border: 1px solid #ddd;
+        }
+        .info-line {
+            margin-bottom: 3px;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #555;
+        }
+        .info-value {
+            color: #333;
+        }
+
+        #errorMessage {
+            color: #d9534f;
+            font-size: 0.85em;
+            min-height: 18px; 
+            margin-bottom: 5px;
+            text-align: center;
+            width: 100%;
+        }
+
+        #atomContainer {
+            width: 95vw;
+            max-width: 700px; 
+            height: 58vh; 
+            margin-top: 5px;
+            border: 1px solid #bbb; 
+            box-shadow: 0 0 12px rgba(0,0,0,0.15);
+            position: relative;
+            transition: background-color 0.5s ease; 
+        }
+        #legend {
+            margin-top: 8px;
+            padding: 8px 12px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: fit-content;
+            max-width: 90%;
+            text-align: left;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        #legend h4 {
+            margin-top: 0;
+            margin-bottom: 6px;
+            font-size: 0.95em;
+            color: #333;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+            font-size: 0.85em;
+            color: #444;
+        }
+        .legend-color-swatch {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%; 
+            margin-right: 7px;
+            border: 1px solid #555; 
+        }
+        .proton-color-swatch {
+            background-color: #ff0000; /* Red */
+        }
+        .neutron-color-swatch {
+            background-color: #808080; /* Grey */
+        }
+        .electron-color-swatch {
+            background-color: #000080; /* Navy Blue */
+        }
+        .legend-note {
+            font-style: italic;
+            color: #555;
+            font-size: 0.8em;
+            margin-top: 4px;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="controls-bar">
+            <label for="elementInput">Element (Symbol, #, Name):</label>
+            <input type="text" id="elementInput" placeholder="e.g., Ca, 20, Hydrogen">
+            <button id="animateButton">Show Atom</button>
+        </div>
+        <div id="elementInfoDisplay">
+            <div class="info-line"><span class="info-label">Atomic Number:</span> <span class="info-value" id="elAtomicNumber">-</span></div>
+            <div class="info-line"><span class="info-label">Symbol:</span> <span class="info-value" id="elSymbol">-</span></div>
+            <div class="info-line"><span class="info-label">Name:</span> <span class="info-value" id="elName">-</span></div>
+            <div class="info-line"><span class="info-label">Atomic Weight:</span> <span class="info-value" id="elAtomicWeight">-</span></div>
+            <div class="info-line"><span class="info-label">Electrons per shell:</span> <span class="info-value" id="elShells">-</span></div>
+            <div class="info-line"><span class="info-label">Category:</span> <span class="info-value" id="elCategory">-</span></div>
+        </div>
+        <div id="errorMessage"></div>
+    </div>
+
+    <div id="atomContainer"></div>
+
+    <div id="legend">
+        <h4>Legend:</h4>
+        <div class="legend-item">
+            <span class="legend-color-swatch proton-color-swatch"></span> Proton
+        </div>
+        <div class="legend-item">
+            <span class="legend-color-swatch neutron-color-swatch"></span> Neutron
+        </div>
+        <div class="legend-item">
+            <span class="legend-color-swatch electron-color-swatch"></span> Electron
+        </div>
+        <div class="legend-note">(Use mouse to rotate, zoom, and pan the 3D model)</div>
+    </div>
+
+    <script>
+        // --- FULL Periodic Table Data with Categories ---
+        const periodicTableData = [
+            {"name":"Hydrogen","symbol":"H","number":1,"atomic_mass":1.008,"shells":[1],"category":"reactive nonmetal"},
+            {"name":"Helium","symbol":"He","number":2,"atomic_mass":4.002602,"shells":[2],"category":"noble gas"},
+            {"name":"Lithium","symbol":"Li","number":3,"atomic_mass":6.94,"shells":[2,1],"category":"alkali metal"},
+            {"name":"Beryllium","symbol":"Be","number":4,"atomic_mass":9.0121831,"shells":[2,2],"category":"alkaline earth metal"},
+            {"name":"Boron","symbol":"B","number":5,"atomic_mass":10.81,"shells":[2,3],"category":"metalloid"},
+            {"name":"Carbon","symbol":"C","number":6,"atomic_mass":12.011,"shells":[2,4],"category":"reactive nonmetal"},
+            {"name":"Nitrogen","symbol":"N","number":7,"atomic_mass":14.007,"shells":[2,5],"category":"reactive nonmetal"},
+            {"name":"Oxygen","symbol":"O","number":8,"atomic_mass":15.999,"shells":[2,6],"category":"reactive nonmetal"},
+            {"name":"Fluorine","symbol":"F","number":9,"atomic_mass":18.998403163,"shells":[2,7],"category":"reactive nonmetal"}, 
+            {"name":"Neon","symbol":"Ne","number":10,"atomic_mass":20.1797,"shells":[2,8],"category":"noble gas"},
+            {"name":"Sodium","symbol":"Na","number":11,"atomic_mass":22.98976928,"shells":[2,8,1],"category":"alkali metal"},
+            {"name":"Magnesium","symbol":"Mg","number":12,"atomic_mass":24.305,"shells":[2,8,2],"category":"alkaline earth metal"},
+            {"name":"Aluminium","symbol":"Al","number":13,"atomic_mass":26.9815385,"shells":[2,8,3],"category":"post-transition metal"},
+            {"name":"Silicon","symbol":"Si","number":14,"atomic_mass":28.085,"shells":[2,8,4],"category":"metalloid"},
+            {"name":"Phosphorus","symbol":"P","number":15,"atomic_mass":30.973761998,"shells":[2,8,5],"category":"reactive nonmetal"},
+            {"name":"Sulfur","symbol":"S","number":16,"atomic_mass":32.06,"shells":[2,8,6],"category":"reactive nonmetal"},
+            {"name":"Chlorine","symbol":"Cl","number":17,"atomic_mass":35.45,"shells":[2,8,7],"category":"reactive nonmetal"}, 
+            {"name":"Argon","symbol":"Ar","number":18,"atomic_mass":39.948,"shells":[2,8,8],"category":"noble gas"},
+            {"name":"Potassium","symbol":"K","number":19,"atomic_mass":39.0983,"shells":[2,8,8,1],"category":"alkali metal"},
+            {"name":"Calcium","symbol":"Ca","number":20,"atomic_mass":40.078,"shells":[2,8,8,2],"category":"alkaline earth metal"},
+            {"name":"Scandium","symbol":"Sc","number":21,"atomic_mass":44.955908,"shells":[2,8,9,2],"category":"transition metal"},
+            {"name":"Titanium","symbol":"Ti","number":22,"atomic_mass":47.867,"shells":[2,8,10,2],"category":"transition metal"},
+            {"name":"Vanadium","symbol":"V","number":23,"atomic_mass":50.9415,"shells":[2,8,11,2],"category":"transition metal"},
+            {"name":"Chromium","symbol":"Cr","number":24,"atomic_mass":51.9961,"shells":[2,8,13,1],"category":"transition metal"},
+            {"name":"Manganese","symbol":"Mn","number":25,"atomic_mass":54.938044,"shells":[2,8,13,2],"category":"transition metal"},
+            {"name":"Iron","symbol":"Fe","number":26,"atomic_mass":55.845,"shells":[2,8,14,2],"category":"transition metal"},
+            {"name":"Cobalt","symbol":"Co","number":27,"atomic_mass":58.933194,"shells":[2,8,15,2],"category":"transition metal"},
+            {"name":"Nickel","symbol":"Ni","number":28,"atomic_mass":58.6934,"shells":[2,8,16,2],"category":"transition metal"},
+            {"name":"Copper","symbol":"Cu","number":29,"atomic_mass":63.546,"shells":[2,8,18,1],"category":"transition metal"},
+            {"name":"Zinc","symbol":"Zn","number":30,"atomic_mass":65.38,"shells":[2,8,18,2],"category":"transition metal"},
+            {"name":"Gallium","symbol":"Ga","number":31,"atomic_mass":69.723,"shells":[2,8,18,3],"category":"post-transition metal"},
+            {"name":"Germanium","symbol":"Ge","number":32,"atomic_mass":72.630,"shells":[2,8,18,4],"category":"metalloid"},
+            {"name":"Arsenic","symbol":"As","number":33,"atomic_mass":74.921595,"shells":[2,8,18,5],"category":"metalloid"},
+            {"name":"Selenium","symbol":"Se","number":34,"atomic_mass":78.971,"shells":[2,8,18,6],"category":"reactive nonmetal"},
+            {"name":"Bromine","symbol":"Br","number":35,"atomic_mass":79.904,"shells":[2,8,18,7],"category":"reactive nonmetal"}, 
+            {"name":"Krypton","symbol":"Kr","number":36,"atomic_mass":83.798,"shells":[2,8,18,8],"category":"noble gas"},
+            {"name":"Rubidium","symbol":"Rb","number":37,"atomic_mass":85.4678,"shells":[2,8,18,8,1],"category":"alkali metal"},
+            {"name":"Strontium","symbol":"Sr","number":38,"atomic_mass":87.62,"shells":[2,8,18,8,2],"category":"alkaline earth metal"},
+            {"name":"Yttrium","symbol":"Y","number":39,"atomic_mass":88.90584,"shells":[2,8,18,9,2],"category":"transition metal"},
+            {"name":"Zirconium","symbol":"Zr","number":40,"atomic_mass":91.224,"shells":[2,8,18,10,2],"category":"transition metal"},
+            {"name":"Niobium","symbol":"Nb","number":41,"atomic_mass":92.90637,"shells":[2,8,18,12,1],"category":"transition metal"},
+            {"name":"Molybdenum","symbol":"Mo","number":42,"atomic_mass":95.96,"shells":[2,8,18,13,1],"category":"transition metal"},
+            {"name":"Technetium","symbol":"Tc","number":43,"atomic_mass":98,"shells":[2,8,18,13,2],"category":"transition metal"},
+            {"name":"Ruthenium","symbol":"Ru","number":44,"atomic_mass":101.07,"shells":[2,8,18,15,1],"category":"transition metal"},
+            {"name":"Rhodium","symbol":"Rh","number":45,"atomic_mass":102.90550,"shells":[2,8,18,16,1],"category":"transition metal"},
+            {"name":"Palladium","symbol":"Pd","number":46,"atomic_mass":106.42,"shells":[2,8,18,18],"category":"transition metal"},
+            {"name":"Silver","symbol":"Ag","number":47,"atomic_mass":107.8682,"shells":[2,8,18,18,1],"category":"transition metal"},
+            {"name":"Cadmium","symbol":"Cd","number":48,"atomic_mass":112.414,"shells":[2,8,18,18,2],"category":"transition metal"},
+            {"name":"Indium","symbol":"In","number":49,"atomic_mass":114.818,"shells":[2,8,18,18,3],"category":"post-transition metal"},
+            {"name":"Tin","symbol":"Sn","number":50,"atomic_mass":118.710,"shells":[2,8,18,18,4],"category":"post-transition metal"},
+            {"name":"Antimony","symbol":"Sb","number":51,"atomic_mass":121.760,"shells":[2,8,18,18,5],"category":"metalloid"},
+            {"name":"Tellurium","symbol":"Te","number":52,"atomic_mass":127.60,"shells":[2,8,18,18,6],"category":"metalloid"},
+            {"name":"Iodine","symbol":"I","number":53,"atomic_mass":126.90447,"shells":[2,8,18,18,7],"category":"reactive nonmetal"}, 
+            {"name":"Xenon","symbol":"Xe","number":54,"atomic_mass":131.293,"shells":[2,8,18,18,8],"category":"noble gas"},
+            {"name":"Caesium","symbol":"Cs","number":55,"atomic_mass":132.90545196,"shells":[2,8,18,18,8,1],"category":"alkali metal"},
+            {"name":"Barium","symbol":"Ba","number":56,"atomic_mass":137.327,"shells":[2,8,18,18,8,2],"category":"alkaline earth metal"},
+            {"name":"Lanthanum","symbol":"La","number":57,"atomic_mass":138.90547,"shells":[2,8,18,18,9,2],"category":"lanthanide"},
+            {"name":"Cerium","symbol":"Ce","number":58,"atomic_mass":140.116,"shells":[2,8,18,19,9,2],"category":"lanthanide"},
+            {"name":"Praseodymium","symbol":"Pr","number":59,"atomic_mass":140.90766,"shells":[2,8,18,21,8,2],"category":"lanthanide"},
+            {"name":"Neodymium","symbol":"Nd","number":60,"atomic_mass":144.242,"shells":[2,8,18,22,8,2],"category":"lanthanide"},
+            {"name":"Promethium","symbol":"Pm","number":61,"atomic_mass":145,"shells":[2,8,18,23,8,2],"category":"lanthanide"},
+            {"name":"Samarium","symbol":"Sm","number":62,"atomic_mass":150.36,"shells":[2,8,18,24,8,2],"category":"lanthanide"},
+            {"name":"Europium","symbol":"Eu","number":63,"atomic_mass":151.964,"shells":[2,8,18,25,8,2],"category":"lanthanide"},
+            {"name":"Gadolinium","symbol":"Gd","number":64,"atomic_mass":157.25,"shells":[2,8,18,25,9,2],"category":"lanthanide"},
+            {"name":"Terbium","symbol":"Tb","number":65,"atomic_mass":158.92535,"shells":[2,8,18,27,8,2],"category":"lanthanide"},
+            {"name":"Dysprosium","symbol":"Dy","number":66,"atomic_mass":162.500,"shells":[2,8,18,28,8,2],"category":"lanthanide"},
+            {"name":"Holmium","symbol":"Ho","number":67,"atomic_mass":164.93033,"shells":[2,8,18,29,8,2],"category":"lanthanide"},
+            {"name":"Erbium","symbol":"Er","number":68,"atomic_mass":167.259,"shells":[2,8,18,30,8,2],"category":"lanthanide"},
+            {"name":"Thulium","symbol":"Tm","number":69,"atomic_mass":168.93422,"shells":[2,8,18,31,8,2],"category":"lanthanide"},
+            {"name":"Ytterbium","symbol":"Yb","number":70,"atomic_mass":173.054,"shells":[2,8,18,32,8,2],"category":"lanthanide"},
+            {"name":"Lutetium","symbol":"Lu","number":71,"atomic_mass":174.9668,"shells":[2,8,18,32,9,2],"category":"lanthanide"},
+            {"name":"Hafnium","symbol":"Hf","number":72,"atomic_mass":178.49,"shells":[2,8,18,32,10,2],"category":"transition metal"},
+            {"name":"Tantalum","symbol":"Ta","number":73,"atomic_mass":180.94788,"shells":[2,8,18,32,11,2],"category":"transition metal"},
+            {"name":"Tungsten","symbol":"W","number":74,"atomic_mass":183.84,"shells":[2,8,18,32,12,2],"category":"transition metal"},
+            {"name":"Rhenium","symbol":"Re","number":75,"atomic_mass":186.207,"shells":[2,8,18,32,13,2],"category":"transition metal"},
+            {"name":"Osmium","symbol":"Os","number":76,"atomic_mass":190.23,"shells":[2,8,18,32,14,2],"category":"transition metal"},
+            {"name":"Iridium","symbol":"Ir","number":77,"atomic_mass":192.217,"shells":[2,8,18,32,15,2],"category":"transition metal"},
+            {"name":"Platinum","symbol":"Pt","number":78,"atomic_mass":195.084,"shells":[2,8,18,32,17,1],"category":"transition metal"},
+            {"name":"Gold","symbol":"Au","number":79,"atomic_mass":196.966569,"shells":[2,8,18,32,18,1],"category":"transition metal"},
+            {"name":"Mercury","symbol":"Hg","number":80,"atomic_mass":200.592,"shells":[2,8,18,32,18,2],"category":"transition metal"},
+            {"name":"Thallium","symbol":"Tl","number":81,"atomic_mass":204.38,"shells":[2,8,18,32,18,3],"category":"post-transition metal"},
+            {"name":"Lead","symbol":"Pb","number":82,"atomic_mass":207.2,"shells":[2,8,18,32,18,4],"category":"post-transition metal"},
+            {"name":"Bismuth","symbol":"Bi","number":83,"atomic_mass":208.98040,"shells":[2,8,18,32,18,5],"category":"post-transition metal"},
+            {"name":"Polonium","symbol":"Po","number":84,"atomic_mass":209,"shells":[2,8,18,32,18,6],"category":"metalloid"},
+            {"name":"Astatine","symbol":"At","number":85,"atomic_mass":210,"shells":[2,8,18,32,18,7],"category":"reactive nonmetal"}, 
+            {"name":"Radon","symbol":"Rn","number":86,"atomic_mass":222,"shells":[2,8,18,32,18,8],"category":"noble gas"},
+            {"name":"Francium","symbol":"Fr","number":87,"atomic_mass":223,"shells":[2,8,18,32,18,8,1],"category":"alkali metal"},
+            {"name":"Radium","symbol":"Ra","number":88,"atomic_mass":226,"shells":[2,8,18,32,18,8,2],"category":"alkaline earth metal"},
+            {"name":"Actinium","symbol":"Ac","number":89,"atomic_mass":227,"shells":[2,8,18,32,18,9,2],"category":"actinide"},
+            {"name":"Thorium","symbol":"Th","number":90,"atomic_mass":232.0377,"shells":[2,8,18,32,18,10,2],"category":"actinide"},
+            {"name":"Protactinium","symbol":"Pa","number":91,"atomic_mass":231.03588,"shells":[2,8,18,32,20,9,2],"category":"actinide"},
+            {"name":"Uranium","symbol":"U","number":92,"atomic_mass":238.02891,"shells":[2,8,18,32,21,9,2],"category":"actinide"},
+            {"name":"Neptunium","symbol":"Np","number":93,"atomic_mass":237,"shells":[2,8,18,32,22,9,2],"category":"actinide"},
+            {"name":"Plutonium","symbol":"Pu","number":94,"atomic_mass":244,"shells":[2,8,18,32,24,8,2],"category":"actinide"},
+            {"name":"Americium","symbol":"Am","number":95,"atomic_mass":243,"shells":[2,8,18,32,25,8,2],"category":"actinide"},
+            {"name":"Curium","symbol":"Cm","number":96,"atomic_mass":247,"shells":[2,8,18,32,25,9,2],"category":"actinide"},
+            {"name":"Berkelium","symbol":"Bk","number":97,"atomic_mass":247,"shells":[2,8,18,32,27,8,2],"category":"actinide"},
+            {"name":"Californium","symbol":"Cf","number":98,"atomic_mass":251,"shells":[2,8,18,32,28,8,2],"category":"actinide"},
+            {"name":"Einsteinium","symbol":"Es","number":99,"atomic_mass":252,"shells":[2,8,18,32,29,8,2],"category":"actinide"},
+            {"name":"Fermium","symbol":"Fm","number":100,"atomic_mass":257,"shells":[2,8,18,32,30,8,2],"category":"actinide"},
+            {"name":"Mendelevium","symbol":"Md","number":101,"atomic_mass":258,"shells":[2,8,18,32,31,8,2],"category":"actinide"},
+            {"name":"Nobelium","symbol":"No","number":102,"atomic_mass":259,"shells":[2,8,18,32,32,8,2],"category":"actinide"},
+            {"name":"Lawrencium","symbol":"Lr","number":103,"atomic_mass":266,"shells":[2,8,18,32,32,8,3],"category":"actinide"}, 
+            {"name":"Rutherfordium","symbol":"Rf","number":104,"atomic_mass":267,"shells":[2,8,18,32,32,10,2],"category":"transition metal"},
+            {"name":"Dubnium","symbol":"Db","number":105,"atomic_mass":270,"shells":[2,8,18,32,32,11,2],"category":"transition metal"},
+            {"name":"Seaborgium","symbol":"Sg","number":106,"atomic_mass":271,"shells":[2,8,18,32,32,12,2],"category":"transition metal"},
+            {"name":"Bohrium","symbol":"Bh","number":107,"atomic_mass":270,"shells":[2,8,18,32,32,13,2],"category":"transition metal"},
+            {"name":"Hassium","symbol":"Hs","number":108,"atomic_mass":277,"shells":[2,8,18,32,32,14,2],"category":"transition metal"},
+            {"name":"Meitnerium","symbol":"Mt","number":109,"atomic_mass":278,"shells":[2,8,18,32,32,15,2],"category":"transition metal"},
+            {"name":"Darmstadtium","symbol":"Ds","number":110,"atomic_mass":281,"shells":[2,8,18,32,32,17,1],"category":"transition metal"},
+            {"name":"Roentgenium","symbol":"Rg","number":111,"atomic_mass":282,"shells":[2,8,18,32,32,18,1],"category":"transition metal"},
+            {"name":"Copernicium","symbol":"Cn","number":112,"atomic_mass":285,"shells":[2,8,18,32,32,18,2],"category":"transition metal"},
+            {"name":"Nihonium","symbol":"Nh","number":113,"atomic_mass":286,"shells":[2,8,18,32,32,18,3],"category":"post-transition metal"},
+            {"name":"Flerovium","symbol":"Fl","number":114,"atomic_mass":289,"shells":[2,8,18,32,32,18,4],"category":"post-transition metal"},
+            {"name":"Moscovium","symbol":"Mc","number":115,"atomic_mass":290,"shells":[2,8,18,32,32,18,5],"category":"post-transition metal"},
+            {"name":"Livermorium","symbol":"Lv","number":116,"atomic_mass":293,"shells":[2,8,18,32,32,18,6],"category":"post-transition metal"},
+            {"name":"Tennessine","symbol":"Ts","number":117,"atomic_mass":294,"shells":[2,8,18,32,32,18,7],"category":"reactive nonmetal"}, 
+            {"name":"Oganesson","symbol":"Og","number":118,"atomic_mass":294,"shells":[2,8,18,32,32,18,8],"category":"noble gas"} 
+        ];
+        // --- End of FULL Periodic Table Data ---
+
+        const categoryColorMapping = {
+            "alkali metal": "#DC143C",        // Crimson (Red from image)
+            "alkaline earth metal": "#FFA500",// Orange (Orange from image)
+            "transition metal": "#87CEFA",    // LightSkyBlue (Light Blue from image)
+            "lanthanide": "#6495ED",          // CornflowerBlue (Medium Blue from image)
+            "actinide": "#98FB98",            // PaleGreen (Light Green/Teal from image)
+            "post-transition metal": "#DDA0DD",// Plum (Purple/Lavender from image)
+            "metalloid": "#FFD700",           // Gold (Yellow from image)
+            "reactive nonmetal": "#8FBC8F",   // DarkSeaGreen (Muted Green for Reactive Nonmetals)
+            "noble gas": "#FFB6C1",           // LightPink (Pink from image)
+            "unknown": "#C0C0C0"              // Silver (Grey for "Unknown" category elements, like theoretical ones not in the image legend)
+        };
+
+
+        const elementsBySymbol = new Map();
+        const elementsByNumber = new Map();
+        const elementsByName = new Map();
+
+        if (periodicTableData && periodicTableData.length >= 118) { 
+             periodicTableData.forEach(el => {
+                elementsBySymbol.set(el.symbol.toUpperCase(), el);
+                elementsByNumber.set(el.number, el);
+                elementsByName.set(el.name.toUpperCase(), el);
+            });
+        } else {
+            console.error("Periodic table data is missing or incomplete! Expected at least 118 elements.");
+             const dataError = document.createElement('p');
+            dataError.id = 'data-error-message';
+            dataError.style.color = 'red';
+            dataError.style.textAlign = 'center';
+            dataError.textContent = 'WARNING: Full periodic table data not found in script. Animations may be incomplete or incorrect.';
+            document.body.insertBefore(dataError, document.body.firstChild);
+        }
+
+        const atomContainer = document.getElementById('atomContainer');
+        const elementInput = document.getElementById('elementInput');
+        const animateButton = document.getElementById('animateButton');
+        
+        const elAtomicNumber = document.getElementById('elAtomicNumber');
+        const elSymbol = document.getElementById('elSymbol');
+        const elName = document.getElementById('elName');
+        const elAtomicWeight = document.getElementById('elAtomicWeight');
+        const elShells = document.getElementById('elShells');
+        const elCategory = document.getElementById('elCategory');
+        const errorMessageDiv = document.getElementById('errorMessage');
+
+
+        let scene, camera, renderer, controls;
+        let currentAtomGroup; 
+        let electronsForAnimation = []; 
+
+        const NUCLEON_RADIUS_3D = 0.12; 
+        const NUCLEUS_PACKING_EFFICIENCY = 0.55; 
+
+        const ELECTRON_RADIUS_3D = 0.2;
+        const ORBIT_SPACING_BASE_3D = 2.0;
+        const ORBIT_RADIUS_MIN_3D = 3.0;
+
+        const predefinedShellRotations = [
+            { x: 0, y: 0, z: 0 }, { x: Math.PI / 5, y: 0, z: Math.PI / 7 }, { x: 0, y: Math.PI / 4.5, z: Math.PI / 5 }, 
+            { x: Math.PI / 4, y: Math.PI / 6, z: Math.PI / 3.5 }, { x: -Math.PI / 5.5, y: Math.PI / 8, z: -Math.PI / 6 }, 
+            { x: Math.PI / 7, y: -Math.PI / 5, z: -Math.PI / 4 }, { x: -Math.PI / 6, y: -Math.PI / 7, z: Math.PI / 3 }  
+        ];
+
+        function init3DScene() {
+            scene = new THREE.Scene();
+            const aspect = atomContainer.clientWidth / atomContainer.clientHeight;
+            camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
+            camera.position.z = 15; 
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(atomContainer.clientWidth, atomContainer.clientHeight);
+            atomContainer.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.minDistance = 0.5; 
+            controls.maxDistance = 100; 
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.9); 
+            scene.add(ambientLight);
+            const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.8); 
+            directionalLight1.position.set(5, 10, 7.5);
+            scene.add(directionalLight1);
+            const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5); 
+            directionalLight2.position.set(-5, -5, -7.5); 
+            scene.add(directionalLight2);
+        }
+
+        function formatInputSymbol(inputSymbol) {
+            if (!inputSymbol || inputSymbol.length === 0) return "";
+            if (inputSymbol.length <= 2 && /^[a-zA-Z]+$/.test(inputSymbol)) {
+                 if (inputSymbol.length === 1) return inputSymbol.toUpperCase();
+                 return inputSymbol.charAt(0).toUpperCase() + inputSymbol.slice(1).toLowerCase();
+            }
+            return inputSymbol;
+        }
+
+        function findElement(identifier) {
+            const trimmedIdentifier = identifier.trim();
+            if (!trimmedIdentifier) return null;
+            const numIdentifier = parseInt(trimmedIdentifier);
+
+            if (!isNaN(numIdentifier) && elementsByNumber.has(numIdentifier)) {
+                return elementsByNumber.get(numIdentifier);
+            }
+            const formattedSymbol = formatInputSymbol(trimmedIdentifier);
+            if (elementsBySymbol.has(formattedSymbol.toUpperCase())) {
+                return elementsBySymbol.get(formattedSymbol.toUpperCase());
+            }
+            if (elementsByName.has(trimmedIdentifier.toUpperCase())) {
+                return elementsByName.get(trimmedIdentifier.toUpperCase());
+            }
+            return null;
+        }
+        
+        function clearCurrentAtom() {
+            if (currentAtomGroup) {
+                scene.remove(currentAtomGroup);
+                currentAtomGroup.traverse(object => {
+                    if (object.isMesh) {
+                        if (object.geometry) object.geometry.dispose();
+                        if (object.material) {
+                            if (Array.isArray(object.material)) {
+                                object.material.forEach(material => material.dispose());
+                            } else {
+                                object.material.dispose();
+                            }
+                        }
+                    }
+                });
+            }
+            currentAtomGroup = new THREE.Group(); 
+            scene.add(currentAtomGroup);
+            electronsForAnimation = [];
+        }
+
+        function updateElementInfo(data) {
+             elAtomicNumber.textContent = data.number;
+            elSymbol.textContent = data.symbol;
+            elName.textContent = data.name;
+            elAtomicWeight.textContent = data.atomic_mass.toFixed(3); 
+            elShells.textContent = data.shells.join('-');
+            elCategory.textContent = data.category.charAt(0).toUpperCase() + data.category.slice(1); 
+        }
+        
+        function resetElementInfo() {
+            elAtomicNumber.textContent = "-";
+            elSymbol.textContent = "-";
+            elName.textContent = "-";
+            elAtomicWeight.textContent = "-";
+            elShells.textContent = "-";
+            elCategory.textContent = "-";
+        }
+
+
+        function init3DAtom(identifier) {
+            const data = findElement(identifier);
+
+            if (!data || !data.shells || data.shells.length === 0) {
+                resetElementInfo();
+                errorMessageDiv.textContent = `Element "${identifier}" not found or shell data missing.`;
+                const defaultBg = "#E0E0E0"; 
+                atomContainer.style.backgroundColor = defaultBg;
+                if(scene) scene.background = new THREE.Color(defaultBg);
+                clearCurrentAtom(); 
+                return;
+            }
+
+            clearCurrentAtom(); 
+            updateElementInfo(data);
+            errorMessageDiv.textContent = "";
+
+            const bgColor = categoryColorMapping[data.category.toLowerCase()] || categoryColorMapping["unknown"];
+            atomContainer.style.backgroundColor = bgColor;
+            if(scene) scene.background = new THREE.Color(bgColor);
+
+            const protonsCount = data.number;
+            const neutronsCount = Math.round(data.atomic_mass - data.number);
+            const totalNucleons = protonsCount + neutronsCount;
+            
+            let overallNucleusRadius;
+            if (totalNucleons === 0) { 
+                overallNucleusRadius = NUCLEON_RADIUS_3D; 
+            } else if (totalNucleons === 1) {
+                overallNucleusRadius = NUCLEON_RADIUS_3D; 
+            } else {
+                overallNucleusRadius = Math.cbrt(totalNucleons / NUCLEUS_PACKING_EFFICIENCY) * NUCLEON_RADIUS_3D;
+            }
+            overallNucleusRadius = Math.max(overallNucleusRadius, NUCLEON_RADIUS_3D * (totalNucleons > 1 ? 1.5 : 1.0) );
+
+
+            const protonGeometry = new THREE.SphereGeometry(NUCLEON_RADIUS_3D, 8, 6); 
+            const protonMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000, roughness: 0.6, metalness: 0.2 }); 
+
+            const neutronGeometry = new THREE.SphereGeometry(NUCLEON_RADIUS_3D, 8, 6);
+            const neutronMaterial = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.6, metalness: 0.2 }); // Grey for neutrons
+
+            for (let i = 0; i < protonsCount; i++) {
+                const protonMesh = new THREE.Mesh(protonGeometry, protonMaterial);
+                const phi = Math.random() * Math.PI * 2;
+                const costheta = Math.random() * 2 - 1;
+                const theta = Math.acos(costheta);
+                const r = overallNucleusRadius * Math.cbrt(Math.random()); 
+
+                protonMesh.position.set(
+                    r * Math.sin(theta) * Math.cos(phi),
+                    r * Math.sin(theta) * Math.sin(phi),
+                    r * Math.cos(theta)
+                );
+                currentAtomGroup.add(protonMesh);
+            }
+
+            for (let i = 0; i < neutronsCount; i++) {
+                const neutronMesh = new THREE.Mesh(neutronGeometry, neutronMaterial);
+                const phi = Math.random() * Math.PI * 2;
+                const costheta = Math.random() * 2 - 1;
+                const theta = Math.acos(costheta);
+                const r = overallNucleusRadius * Math.cbrt(Math.random());
+
+                neutronMesh.position.set(
+                    r * Math.sin(theta) * Math.cos(phi),
+                    r * Math.sin(theta) * Math.sin(phi),
+                    r * Math.cos(theta)
+                );
+                currentAtomGroup.add(neutronMesh);
+            }
+
+            let maxOrbitRadius = 0;
+            const numShells = data.shells.length;
+            let dynamicOrbitSpacing = ORBIT_SPACING_BASE_3D;
+            let dynamicMinRadius = ORBIT_RADIUS_MIN_3D;
+
+            dynamicMinRadius = Math.max(dynamicMinRadius, overallNucleusRadius + ELECTRON_RADIUS_3D + 0.5);
+
+            if (numShells > 3) { 
+                const scaleDownFactor = 1 - Math.min(0.7, (numShells - 3) * 0.08); 
+                dynamicOrbitSpacing *= scaleDownFactor;
+                dynamicOrbitSpacing = Math.max(0.5, dynamicOrbitSpacing); 
+                dynamicMinRadius = Math.max(overallNucleusRadius + 0.8, dynamicMinRadius);    
+            }
+
+            data.shells.forEach((numElectronsInShell, shellIndex) => {
+                const shellGroup = new THREE.Group();
+                const rotation = predefinedShellRotations[shellIndex % predefinedShellRotations.length];
+                shellGroup.rotation.set(rotation.x, rotation.y, rotation.z);
+                currentAtomGroup.add(shellGroup);
+
+                const orbitRadius = dynamicMinRadius + shellIndex * dynamicOrbitSpacing;
+                if (orbitRadius > maxOrbitRadius) maxOrbitRadius = orbitRadius;
+
+                for (let i = 0; i < numElectronsInShell; i++) {
+                    const electronGeometry = new THREE.SphereGeometry(ELECTRON_RADIUS_3D, 12, 6); 
+                    // Navy Blue electrons, standard material to react to light
+                    const electronMaterial = new THREE.MeshStandardMaterial({ color: 0x000080, roughness: 0.5, metalness: 0.2 }); 
+                    
+                    const electronMesh = new THREE.Mesh(electronGeometry, electronMaterial);
+                    
+                    const angle = (Math.PI * 2 / numElectronsInShell) * i + (shellIndex * 0.3);
+                    electronMesh.position.x = orbitRadius * Math.cos(angle);
+                    electronMesh.position.y = orbitRadius * Math.sin(angle);
+                    
+                    shellGroup.add(electronMesh);
+
+                    electronsForAnimation.push({
+                        mesh: electronMesh, orbitRadius: orbitRadius, currentAngle: angle,
+                        speed: (0.03 - shellIndex * 0.0035) * (Math.random() * 0.3 + 0.85) 
+                    });
+                }
+            });
+            
+            const effectiveAtomRadius = Math.max(overallNucleusRadius, maxOrbitRadius);
+
+            if (effectiveAtomRadius > 0 || totalNucleons > 0) {
+                controls.target.set(0,0,0);
+                const fovInRadians = THREE.MathUtils.degToRad(camera.fov);
+                let camZ = (effectiveAtomRadius / Math.tan(fovInRadians / 2)) * 1.3;
+                if (totalNucleons > 0 && maxOrbitRadius === 0 && (data.shells.length === 0 || (data.shells.length === 1 && data.shells[0] === 0))) { 
+                     camZ = (overallNucleusRadius / Math.tan(fovInRadians / 2)) * 3.5 + 1; 
+                }
+                
+                camZ = Math.max(overallNucleusRadius * 2.5 + 1, Math.min(80, camZ)); 
+                
+                camera.position.set(camZ * 0.3, camZ * 0.2, camZ); 
+                camera.lookAt(scene.position); 
+                controls.update();
+            } else { 
+                 camera.position.set(0, 0, 10);
+                 camera.lookAt(scene.position);
+                 controls.update();
+            }
+        }
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+
+            electronsForAnimation.forEach(electron => {
+                electron.currentAngle += electron.speed;
+                const twoPi = Math.PI * 2;
+                if (electron.speed > 0 && electron.currentAngle > twoPi) electron.currentAngle -= twoPi;
+                else if (electron.speed < 0 && electron.currentAngle < -twoPi) electron.currentAngle += twoPi;
+                
+                electron.mesh.position.x = electron.orbitRadius * Math.cos(electron.currentAngle);
+                electron.mesh.position.y = electron.orbitRadius * Math.sin(electron.currentAngle);
+            });
+
+            controls.update(); 
+            renderer.render(scene, camera);
+        }
+
+        animateButton.addEventListener('click', () => {
+            const val = elementInput.value;
+            if (val) init3DAtom(val);
+        });
+        
+        elementInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                const val = elementInput.value;
+                if (val) init3DAtom(val);
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            if (camera && renderer) {
+                camera.aspect = atomContainer.clientWidth / atomContainer.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(atomContainer.clientWidth, atomContainer.clientHeight);
+            }
+        });
+
+        // --- Initial Setup ---
+        if (typeof THREE === 'undefined' || typeof THREE.OrbitControls === 'undefined') {
+            alert("Three.js or OrbitControls did not load. Please check your internet connection or the CDN links.");
+        } else {
+            init3DScene();
+            init3DAtom("H"); 
+            animate3D();
+        }
+    </script>
+</body>
+</html>
